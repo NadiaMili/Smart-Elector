@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Smart Ballot - Live Voting</title>
+    <script src="https://cdn.tailwindcss.com"></script> <!-- Tailwind CSS -->
+    <style>
+        /* Custom style for the image */
+        .list-item-image {
+            width: 105px; /* Increased image size by 1.5x */
+            height: 105px; /* Increased image size by 1.5x */
+            object-fit: cover;
+            border-radius: 50%; /* Make the image round */
+        }
+        .list-item-text {
+            font-size: 22px; /* Increased font size for better visibility */
+            font-weight: bold; /* Make the text bold */
+        }
+        /* Style for the winner popup */
+        .popup {
+            position: fixed;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            background: white;
+            padding: 20px;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+            display: none;
+            z-index: 9999;
+        }
+        .popup img {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            margin-bottom: 15px;
+        }
+        .popup .winner-text {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+    </style>
+    <script>
+        async function fetchLiveVotes() {
+            try {
+                const response = await fetch("live_votes.json");
+                const voteCounts = await response.json();
+                const voteList = document.getElementById("voteList");
+                voteList.innerHTML = "";
+
+                const imageMap = {
+                    "dhaner_shish": "/images/dhan.png",
+                    "eagle": "/images/eagle.png",
+                    "guri": "/images/guri.png",
+                    "langol": "/images/langol.jpg",
+                    "nouka": "/images/nouka.png"
+                };
+
+                for (const [label, count] of Object.entries(voteCounts)) {
+                    const listItem = document.createElement("li");
+                    listItem.className = "bg-white shadow-md rounded-lg p-4 my-2"; // Tailwind styling for item
+
+                    const container = document.createElement("div");
+                    container.className = "flex items-center justify-center space-x-4"; // Flex container for centering
+
+                    const image = document.createElement("img");
+                    image.src = imageMap[label] || "images/default.jpg"; // Default image if the specific one is not found
+                    image.alt = label;
+                    image.className = "list-item-image"; // Apply custom image style
+
+                    // Error handling for image load failure
+                    image.onerror = function () {
+                        console.error(`Failed to load image for ${label}`);
+                        image.src = "images/default.jpg"; // Fallback image
+                    };
+
+                    const text = document.createElement("span");
+                    text.className = "list-item-text text-xl"; // Apply custom text style
+                    text.textContent = `${label}: ${count}`;
+
+                    container.appendChild(image);
+                    container.appendChild(text);
+                    listItem.appendChild(container);
+
+                    voteList.appendChild(listItem);
+                }
+            } catch (error) {
+                console.error("Error fetching live votes:", error);
+            }
+        }
+
+        // Function to show the winner popup
+        async function showWinner() {
+            try {
+                const response = await fetch("winner.json");
+                const winnerData = await response.json();
+                const popup = document.getElementById("winnerPopup");
+                const winnerImage = document.getElementById("winnerImage");
+                const winnerText = document.getElementById("winnerText");
+
+                winnerImage.src = winnerData.logo;  // Set the winner's logo
+                winnerText.textContent = `${winnerData.winner} wins with ${winnerData.count} votes!`;  // Display winner text
+
+                // Show the popup
+                popup.style.display = "block";
+            } catch (error) {
+                console.error("Error fetching winner data:", error);
+            }
+        }
+
+        // Update live votes every 2 seconds
+        setInterval(fetchLiveVotes, 2000);
+    </script>
+</head>
+<body class="bg-gray-100"> <!-- Tailwind background for the body -->
+    <div class="container mx-auto text-center mt-10">
+        <h1 class="text-4xl font-semibold mb-6 text-gray-800">Smart Ballot - Live Voting</h1>
+        
+        <!-- Single Card to Contain All Items -->
+        <div class="bg-white shadow-xl rounded-lg p-6 w-full max-w-4xl mx-auto">
+            <ul id="voteList" class="space-y-4"></ul> <!-- Tailwind spacing between list items -->
+        </div>
+    </div>
+
+    <!-- Popup for displaying the winner -->
+    <div id="winnerPopup" class="popup">
+        <img id="winnerImage" src="" alt="Winner Logo">
+        <div class="winner-text" id="winnerText"></div>
+        <button onclick="document.getElementById('winnerPopup').style.display='none'" class="bg-blue-500 text-white p-2 rounded mt-4">Close</button>
+    </div>
+
+</body>
+</html>
